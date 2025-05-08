@@ -3,13 +3,10 @@ import streamlit as st
 import joblib
 import re
 import string
-import spacy
+import json
 import time
 import requests
 import streamlit_lottie as st_lottie
-
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
 
 # Load model and vectorizer
 @st.cache_resource
@@ -20,15 +17,15 @@ def load_model_and_vectorizer():
 
 model, vectorizer = load_model_and_vectorizer()
 
-# Text preprocessing
+# Text preprocessing without spaCy
 def preprocess(text):
     text = text.lower().replace('’', "'")
     text = re.sub(r"http\S+|www\S+", '', text)
     text = re.sub(r"\d+", '[NUMBER]', text)
     text = text.translate(str.maketrans('', '', string.punctuation.replace("'", "")))
-    doc = nlp(text)
-    lemmatized = [token.lemma_ for token in doc if not token.is_stop and len(token.text) > 2]
-    return ' '.join(lemmatized)
+    words = text.split()
+    words = [word for word in words if len(word) > 2]
+    return ' '.join(words)
 
 # Load Lottie animation from URL
 def load_lottie_url(url: str):
@@ -144,29 +141,22 @@ st.markdown('<div class="main-title">📰 Fake News Detector</div>', unsafe_allo
 # Subheading
 st.markdown('<div class="subtext">Analyze the authenticity of a news article using a trained SVC model.</div>', unsafe_allow_html=True)
 
-# Tabs
-tab1, tab2 = st.tabs(["🔍 Analyze", "📊 Insights"])
+# Input and prediction
+user_input = st.text_area("✍️ Enter News Article Text Below:", height=200)
+if st.button("🔍 Analyze"):
+    if user_input.strip():
+        with st.spinner("Analyzing... please wait..."):
+            time.sleep(1)
+            processed = preprocess(user_input)
+            vector = vectorizer.transform([processed])
+            prediction = model.predict(vector)[0]
 
-with tab1:
-    user_input = st.text_area("✍️ Enter News Article Text Below:", height=200)
-    if st.button("🔍 Analyze"):
-        if user_input.strip():
-            with st.spinner("Analyzing... please wait..."):
-                time.sleep(1)
-                processed = preprocess(user_input)
-                vector = vectorizer.transform([processed])
-                prediction = model.predict(vector)[0]
-
-            if prediction == 1:
-                st.markdown('<div class="result-box real">✅ The news appears to be <b>REAL</b>.</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="result-box fake">❌ The news appears to be <b>FAKE</b>.</div>', unsafe_allow_html=True)
+        if prediction == 1:
+            st.markdown('<div class="result-box real">✅ The news appears to be <b>REAL</b>.</div>', unsafe_allow_html=True)
         else:
-            st.warning("⚠️ Please enter some text to analyze.")
-
-with tab2:
-    st.markdown("## 🧠 Model Insights")
-    st.info("Coming soon: analytics on prediction distribution, word importance, and model performance.")
+            st.markdown('<div class="result-box fake">❌ The news appears to be <b>FAKE</b>.</div>', unsafe_allow_html=True)
+    else:
+        st.warning("⚠️ Please enter some text to analyze.")
 
 # Footer
 st.markdown("""
