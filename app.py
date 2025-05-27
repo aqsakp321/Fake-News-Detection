@@ -1,3 +1,4 @@
+# Web App Code
 # Import libraries
 import streamlit as st
 import joblib
@@ -35,7 +36,7 @@ def load_lottie_url(url: str):
     return r.json()
 
 # Load animation
-lottie_news = load_lottie_url("https://lottie.host/cf02946c-7ce0-474e-8908-babcefc90f84/tAUhORByT7.json")
+lottie_news = load_lottie_url("https://lottie.host/bf70a6ab-ab34-4726-ae06-2008e7893e46/cmwoT6sVMi.json")
 
 # Custom CSS
 st.markdown("""
